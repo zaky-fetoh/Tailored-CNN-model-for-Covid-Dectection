@@ -1,0 +1,27 @@
+torch.cuda.empty_cache()
+    layrDepth = [4*16, 4*32, 4*64, 4*64, 4*64, 4*16]
+    N= len(layrDepth)
+    model = eval_clfying((200, 200),
+                         depth=layrDepth,
+                         kernel_sizes=[None] *N , drop=[0] * N,
+                         booling=[1] * N,
+                         DFeature=lightConvDenseModel)
+    model.cuda()
+
+    hist = dict();
+    stw = 0
+    # 0ld model getinfog
+    hist = load_dhist('waights/histInfo.pickle'); stw = 7
+    model.load_state_dict(torch.load('waights/weights%i.pth'%(stw-1)))
+    # Ent
+    print(count_params(model))
+    optim = opt.Adam(model.parameters(), 1e-3)
+
+    tr_loader, va_loader = getloaders(batch_size=16)
+
+    loss_fn = nn.CrossEntropyLoss()
+
+    tp = train(model, tr_loader,
+               epochs=30, va_loader=va_loader,
+               optimizer=optim, loss_fn=loss_fn,
+               ustep=256, train_profile=hist, startWith=stw)

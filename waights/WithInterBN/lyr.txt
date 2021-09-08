@@ -1,0 +1,30 @@
+
+class lightFB(nn.Module):
+    def __init__(self, in_chunnel, out_chunnel, kernel_size = None,
+                 booling=True, drop=.5,
+                 activation_func=F.leaky_relu,
+                 DFeature=lightConvDenseModel):
+        super().__init__()
+        self.activation_func, self.booling, self.drop = activation_func, booling, drop
+
+        if self.drop:
+            self.dr = nn.Dropout2d(self.drop)
+
+        if kernel_size is None:
+            self.feature = DFeature(in_chunnel, out_chunnel)
+        else:
+            self.feature = DFeature(in_chunnel, out_chunnel,
+                                    kernel_size)
+
+        self.bn = nn.BatchNorm2d(out_chunnel)
+
+    def forward(self, X):
+        X = self.feature(X)
+        if self.drop:
+            X = self.dr(X)
+        X = self.bn(X)
+        if self.booling:
+            X = F.max_pool2d(X, 2)
+        X = self.activation_func(X)
+        return X
+
